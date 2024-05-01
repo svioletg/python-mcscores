@@ -3,3 +3,4 @@ __pycache__/
 external/
 *.dat
 *.json
+test.py

@@ -13,7 +13,7 @@ def dict_from_json_string(json_string: str) -> dict | None:
 
 class Scoreboard:
     """Takes a scoreboard.dat file and parses it into dictionaries."""
-    def __init__(self, dat_path: Path):
+    def __init__(self, dat_path: Path | str):
         self.data: NBTFile = NBTFile(dat_path, 'rb')['data']
 
         # TODO: Make these TypedDicts
@@ -49,3 +49,27 @@ class Scoreboard:
             if player_name not in self.player_scores:
                 self.player_scores[player_name] = {}
             self.player_scores[player_name][objective] = score
+
+    def get_objective_ranking(self, target_objective: str, ascending: bool=False) -> list[tuple[str, int]]:
+        """Returns a list of tuples containing the player name and player score associated with the given objective,
+        by default sorted from highest to lowest.
+        
+        :param objective: The objective name to retrieve scores for.
+        :param ascending: If true, will instead return score rankings from lowest to highest."""
+        unsorted_scores = {}
+        # Iterate through player's set of objectives
+        for player, objectives in self.player_scores.items():
+            # Establish a dict entry for them, search through every objective
+            unsorted_scores[player] = {}
+            for obj, score in objectives.items():
+                # If this is our target then store it, and break the loop
+                if obj == target_objective:
+                    unsorted_scores[player] = score
+                    break
+            # If nothing was found, don't include an empty dict in the results
+            if not unsorted_scores[player]:
+                unsorted_scores.pop(player)
+        # Sort them highest to lowest, reverse if specified
+        # This lambda sorts it by values instead of keys. I don't know how it works, that's just what came up
+        ranking = sorted(unsorted_scores.items(), key=lambda x: x[1], reverse=not ascending)
+        return ranking
