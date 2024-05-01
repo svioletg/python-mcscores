@@ -5,6 +5,7 @@ from pathlib import Path
 
 from nbt.nbt import NBTFile
 
+
 def dict_from_json_string(json_string: str) -> dict | None:
     matches = re.findall(r'\"(.*?)\": ?\"(.*?)\"', json_string)
     if not matches:
