@@ -51,7 +51,7 @@ class Scoreboard:
                 self.player_scores[player_name] = {}
             self.player_scores[player_name][objective] = score
 
-    def get_objective_ranking(self, target_objective: str, ascending: bool=False) -> list[tuple[str, int]]:
+    def get_objective_scores(self, target_objective: str, ascending: bool=False) -> list[tuple[str, int]]:
         """Returns a list of tuples containing the player name and player score associated with the given objective,
         by default sorted from highest to lowest.
         
@@ -72,5 +72,4 @@ class Scoreboard:
                 unsorted_scores.pop(player)
         # Sort them highest to lowest, reverse if specified
         # This lambda sorts it by values instead of keys. I don't know how it works, that's just what came up
-        ranking = sorted(unsorted_scores.items(), key=lambda x: x[1], reverse=not ascending)
-        return ranking
+        return sorted(unsorted_scores.items(), key=lambda x: x[1], reverse=not ascending)
