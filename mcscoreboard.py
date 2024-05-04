@@ -14,8 +14,11 @@ class Scoreboard:
         Can either be a list of username strings, or a file path to a valid `whitelist.json` file.
         Some datapacks use 'dummy' players to store data, so this can be useful to sort those out.
     
-    :param `player_blacklist`: Opposite effect of the whitelist parameter. Both a whitelist and blacklist cannot be used at the same time."""
-    def __init__(self, data_source: Path | str, player_whitelist: list | Path | str='', player_blacklist: list | Path | str=''):
+    :param `player_blacklist`: Opposite effect of the whitelist parameter. Both a whitelist and blacklist cannot be used at the same time.
+    
+    :param `include_dot_names`: Allows player names starting with a dot (.) to be added to the data. This is common for Bedrock users joining through
+        something like Geyser. This will allow any player names beginning with a dot if whitelisting, but will still exclude the name if blacklisting."""
+    def __init__(self, data_source: Path | str, player_whitelist: list | Path | str='', player_blacklist: list | Path | str='', include_dot_names: bool = True):
         if player_whitelist and player_blacklist:
             # Raise an error if trying to use a whitelist and a blacklist together.
             # Technically it could work but one would have to take priority, and I can't see
@@ -82,6 +85,12 @@ class Scoreboard:
             self.player_scores: dict = {}
             for entry in self.data['PlayerScores']:
                 player_name: str = entry['Name'].value
+
+                # Skip this player if they're in the blacklist or not in the whitelists
+                if (self.player_blacklist and player_name in self.player_blacklist) or \
+                    ((self.player_whitelist and player_name not in self.player_whitelist) and (include_dot_names and not player_name.startswith('.'))):
+                    continue
+
                 objective: str = entry['Objective'].value
                 score: int = entry['Score'].value
                 # Make an entry for this player if it doesn't exist
