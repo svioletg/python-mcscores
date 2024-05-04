@@ -4,3 +4,4 @@ external/
 *.dat
 *.json
 test.py
+*.html
