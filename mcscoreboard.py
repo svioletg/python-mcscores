@@ -113,6 +113,11 @@ class Scoreboard:
             'DisplaySlots': self.display_slots
             }
 
+    def get_objective_name(self, objective: str, json_string: bool=False):
+        """Shorthand for retrieving the 'DisplayName' attribute of the given objective."""
+        name_info: dict = self.objectives[objective]['DisplayName']
+        return name_info['json_dict']['text'] if not json_string else name_info['json_string']
+
     def get_objective_scores(self, target_objective: str, ascending: bool=False) -> list[tuple[str, int]]:
         """Returns a list of tuples containing the player name and player score associated with the given objective,
         by default sorted from highest to lowest.
