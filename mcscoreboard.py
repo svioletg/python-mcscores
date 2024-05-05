@@ -1,6 +1,8 @@
 """Script for reading Minecraft scoreboard data and processing it into dicts to be more Python-ready.
 A method is provided in the main Scoreboard class to dump everything to JSON, as well."""
 import json
+import sys
+import time
 from pathlib import Path
 
 
@@ -18,7 +20,11 @@ class Scoreboard:
     
     :param `include_dot_names`: Allows player names starting with a dot (.) to be added to the data. This is common for Bedrock users joining through
         something like Geyser. This will allow any player names beginning with a dot if whitelisting, but will still exclude the name if blacklisting."""
-    def __init__(self, data_source: Path | str, player_whitelist: list | Path | str='', player_blacklist: list | Path | str='', include_dot_names: bool = True):
+    def __init__(self,
+            data_source: Path | str,
+            player_whitelist: list[str] | Path | str='',
+            player_blacklist: list[str] | Path | str='',
+            include_dot_names: bool = True):
         if player_whitelist and player_blacklist:
             # Raise an error if trying to use a whitelist and a blacklist together.
             # Technically it could work but one would have to take priority, and I can't see
@@ -98,7 +104,7 @@ class Scoreboard:
                     self.player_scores[player_name] = {}
                 self.player_scores[player_name][objective] = score
     
-    def __dict__(self) -> dict:
+    def to_dict(self) -> dict:
         """Return a dictionary of this Scoreboard data."""
         return {
             'Teams': self.teams,
@@ -129,3 +135,39 @@ class Scoreboard:
         # Sort them highest to lowest, reverse if specified
         # This lambda sorts it by values instead of keys. I don't know how it works, that's just what came up
         return sorted(unsorted_scores.items(), key=lambda x: x[1], reverse=not ascending)
+
+def main():
+    # TODO: Use argparse instead, this is temporary
+    if len(sys.argv) < 2:
+        print('If running this script directly, you need to supply a file path to either a DAT or JSON file as an argument.')
+        input('Press ENTER to quit.')
+        return
+
+    infile: Path = Path(sys.argv[1])
+    
+    if (filter_type := input('Filter? (w for whitelist, b for blacklist, n for none) ').lower()) not in ['w', 'b', 'n']:
+        print('Invalid response.')
+        input('Press ENTER to quit.')
+        return
+    
+    q: str = input('Provide a list of names to filter, or a path to a JSON file. ')
+    filter_contents: Path | list[str] = Path(q) if q.endswith('.json') else [i.strip() for i in q.split(',')]
+    del q
+
+    kwargs: dict = {}
+    if filter_type != 'n':
+        kwargs['player_whitelist' if filter_type == 'w' else 'player_blacklist'] = filter_contents
+    
+    sb: Scoreboard = Scoreboard(infile, **kwargs)
+
+    outfile: str = f'output_{infile}.json'
+
+    with open(outfile, 'w', encoding='utf-8') as f:
+        json.dump(sb.to_dict(), f)
+    
+    print(f'Saved to {outfile}')
+    input('Press ENTER to quit.')
+    return
+
+if __name__ == '__main__':
+    main()
