@@ -3,7 +3,7 @@ __pycache__/
 external/
 build/
 *.egg-info
-*.dat
 *.json
-test.py
-*.html
+!tests/data/*.json
+*.dat
+!tests/data/*.dat
