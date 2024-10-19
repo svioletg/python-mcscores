@@ -1,6 +1,8 @@
 __pycache__/
-.env/
+.venv/
 external/
+build/
+*.egg-info
 *.dat
 *.json
 test.py
