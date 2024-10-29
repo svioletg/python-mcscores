@@ -4,7 +4,7 @@ A method is provided in the main Scoreboard class to dump everything to JSON, as
 """
 
 import json
-import sys
+from argparse import ArgumentParser
 from pathlib import Path
 from typing import Any
 
@@ -91,14 +91,14 @@ class Scoreboard:
                     'NameTagVisibility':      team['NameTagVisibility'].value,
                     'MemberNameSuffix':       team['MemberNameSuffix'].value,
                     'Players':                [player.value for player in team['Players']],
-                    'DisplayName':            {'json_dict': json.loads(team['DisplayName'].value), 'json_string': team['DisplayName'].value}
+                    'DisplayName':            team['DisplayName'].value
                     }
             self.objectives = {}
             for obj in tqdm(self.nbt_data['Objectives'], desc='Getting objectives', disable=not show_progress):
                 self.objectives[obj['Name'].value] = {
                         'CriteriaName': obj['CriteriaName'].value,
                         'RenderType':   obj['RenderType'].value,
-                        'DisplayName':  {'json_dict': json.loads(obj['DisplayName'].value), 'json_string': obj['DisplayName'].value}
+                        'DisplayName':  obj['DisplayName'].value
                     }
             self.display_slots = {slot:obj.value for slot,obj in tqdm(self.nbt_data['DisplaySlots'].items(), disable=not show_progress)}
             self.player_scores = {}
@@ -167,29 +167,28 @@ class Scoreboard:
         return sorted(unsorted_scores.items(), key=lambda x: x[1], reverse=not ascending)
 
 def main(): # pylint: disable=missing-function-docstring
-    if len(sys.argv) < 2:
-        print('If running this script directly, you need to supply a file path to either a DAT or JSON file as an argument.')
-        input('Press ENTER to quit.')
-        return
+    parser = ArgumentParser()
+    parser.add_argument('scoreboard_file', type=Path)
+    parser.add_argument('out_file', type=Path)
 
-    infile: Path = Path(sys.argv[1])
+    args = parser.parse_args()
+
+    infile: Path = args.scoreboard_file
+    outfile: Path = args.out_file
 
     if (filter_type := input('Filter? (w for whitelist, b for blacklist, n for none) ').lower()) not in ['w', 'b', 'n']:
         print('Invalid response.')
         input('Press ENTER to quit.')
         return
 
-    q: str = input('Provide a list of names to filter, or a path to a JSON file. ')
-    filter_contents: Path | list[str] = Path(q) if q.endswith('.json') else [i.strip() for i in q.split(',')]
-    del q
-
     kwargs: dict = {}
     if filter_type != 'n':
+        q: str = input('Provide a list of names to filter, or a path to a JSON file. ')
+        filter_contents: Path | list[str] = Path(q) if q.endswith('.json') else [i.strip() for i in q.split(',')]
+        del q
         kwargs['player_whitelist' if filter_type == 'w' else 'player_blacklist'] = filter_contents
 
     sb: Scoreboard = Scoreboard(infile, **kwargs)
-
-    outfile: str = f'output_{infile}.json'
 
     with open(outfile, 'w', encoding='utf-8') as f:
         json.dump(sb.to_dict(), f)
