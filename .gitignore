@@ -4,6 +4,6 @@ external/
 build/
 *.egg-info
 *.json
-!tests/data/*.json
+!tests/data/*/*.json
 *.dat
-!tests/data/*.dat
+!tests/data/*/*.dat

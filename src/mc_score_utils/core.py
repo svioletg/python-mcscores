@@ -1,9 +1,9 @@
 """
-Script for reading Minecraft scoreboard data and processing it into dicts to be more Python-ready.
-A method is provided in the main Scoreboard class to dump everything to JSON, as well.
+Tools for reading Minecraft scoreboard data and processing it into dicts to be more Python-ready.
 """
 
 import json
+import re
 from argparse import ArgumentParser
 from pathlib import Path
 from typing import Any
@@ -91,16 +91,18 @@ class Scoreboard:
                     'NameTagVisibility':      team['NameTagVisibility'].value,
                     'MemberNameSuffix':       team['MemberNameSuffix'].value,
                     'Players':                [player.value for player in team['Players']],
-                    'DisplayName':            team['DisplayName'].value
+                    'DisplayName':            self._enforce_display_name_json(team['DisplayName'].value)
                     }
             self.objectives = {}
             for obj in tqdm(self.nbt_data['Objectives'], desc='Getting objectives', disable=not show_progress):
                 self.objectives[obj['Name'].value] = {
                         'CriteriaName': obj['CriteriaName'].value,
                         'RenderType':   obj['RenderType'].value,
-                        'DisplayName':  obj['DisplayName'].value
+                        'DisplayName':  self._enforce_display_name_json(obj['DisplayName'].value)
                     }
-            self.display_slots = {slot:obj.value for slot,obj in tqdm(self.nbt_data['DisplaySlots'].items(), disable=not show_progress)}
+            self.display_slots = {}
+            if 'DisplaySlots' in self.nbt_data:
+                self.display_slots = {slot:obj.value for slot,obj in tqdm(self.nbt_data['DisplaySlots'].items(), disable=not show_progress)}
             self.player_scores = {}
             for entry in tqdm(self.nbt_data['PlayerScores'], desc='Getting player scores', disable=not show_progress):
                 player_name: str = entry['Name'].value
@@ -128,6 +130,13 @@ class Scoreboard:
             empty = '[]' if isinstance(value, list) else '{}'
             description.append(f'{key}={str(num) + f' {'items' if num > 1 else 'item'}...' if num > 0 else empty}')
         return f'Scoreboard({', '.join(description)})'
+
+    @staticmethod
+    def _enforce_display_name_json(value: str) -> dict[str, str]:
+        if not (match := re.findall(r"^\"(.*)\"$", value)):
+            return json.loads(value)
+        else:
+            return {'text': match[0]}
 
     def to_dict(self) -> dict:
         """Return a dictionary of this Scoreboard data."""
@@ -196,6 +205,3 @@ def main(): # pylint: disable=missing-function-docstring
     print(f'Saved to {outfile}')
     input('Press ENTER to quit.')
     return
-
-if __name__ == '__main__':
-    main()
